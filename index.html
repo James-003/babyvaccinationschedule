@@ -1,0 +1,1999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BabyVax - Newborn Vaccination Scheduler</title>
+    
+    <!-- Mobile App Settings -->
+    <meta name="description" content="Calculate and track exact vaccination dates for your newborn baby. Shareable and offline-ready.">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BabyVax">
+    <!-- PWA Manifest (injected dynamically via JS) -->
+    <link id="pwa-manifest" rel="manifest">
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%236366f1'/%3E%3Cpath d='M67 130C67 150 80 164 96 164C112 164 125 150 125 130C125 116 112 90 96 60C80 90 67 116 67 130Z' fill='white' opacity='0.3'/%3E%3Ccircle cx='96' cy='130' r='20' fill='white'/%3E%3Cpath d='M96 36C88 36 82 42 82 50C82 54 84 58 88 60L88 90L104 90L104 60C108 58 110 54 110 50C110 42 104 36 96 36Z' fill='white'/%3E%3C/svg%3E">
+
+    
+    <style>
+        /* Styles for BabyVax - Standalone Single File Edition */
+        :root {
+            --bg-primary: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-muted: #9ca3af;
+            --accent-primary: #6366f1;
+            --accent-secondary: #ec4899;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+            --border-color: #e5e7eb;
+            --input-bg: #f9fafb;
+            --input-border: #d1d5db;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            
+            --timeline-line: #e5e7eb;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --info: #3b82f6;
+            --info-light: #dbeafe;
+            
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.dark-theme {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #64748b;
+            --accent-primary: #818cf8;
+            --accent-secondary: #f472b6;
+            --accent-gradient: linear-gradient(135deg, #818cf8 0%, #f472b6 100%);
+            --border-color: #334155;
+            --input-bg: #0f172a;
+            --input-border: #475569;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+            
+            --timeline-line: #334155;
+            --success-light: rgba(16, 185, 129, 0.15);
+            --warning-light: rgba(245, 158, 11, 0.15);
+            --danger-light: rgba(239, 68, 68, 0.15);
+            --info-light: rgba(59, 130, 246, 0.15);
+        }
+
+        /* Reset and Global Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        /* App Layout */
+        .app-container {
+            width: 100%;
+            max-width: 540px;
+            background-color: var(--bg-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            position: relative;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            color: var(--text-primary);
+            transition: var(--transition);
+            z-index: 10;
+        }
+
+        .theme-toggle-btn:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-md);
+        }
+
+        .theme-toggle-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        body:not(.dark-theme) .moon-icon {
+            display: block;
+        }
+        body:not(.dark-theme) .sun-icon {
+            display: none;
+        }
+        body.dark-theme .moon-icon {
+            display: none;
+        }
+        body.dark-theme .sun-icon {
+            display: block;
+        }
+
+        /* Header Styles */
+        .app-header {
+            margin: 24px 0;
+            text-align: center;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            background: var(--accent-gradient);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 12px;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .logo-svg {
+            width: 44px;
+            height: 44px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .app-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+
+        .app-header .tagline {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Card Styling */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            transition: var(--transition);
+        }
+
+        .card h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: -0.3px;
+        }
+
+        /* Form Styles */
+        .input-group {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 12px 6px 12px;
+            background-color: var(--input-bg);
+            border: 1.5px solid var(--input-border);
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            color: var(--text-primary);
+            outline: none;
+            transition: var(--transition);
+            height: 54px;
+        }
+
+        .input-group label {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            transition: var(--transition);
+            pointer-events: none;
+            font-size: 16px;
+        }
+
+        /* Floating labels effect */
+        .input-group input:focus ~ label,
+        .input-group input:not(:placeholder-shown) ~ label {
+            top: 12px;
+            font-size: 11px;
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .input-focus-line {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--accent-gradient);
+            transition: var(--transition);
+        }
+
+        .input-group input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        /* Date Dropdowns styling */
+        .date-dropdown-container {
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .date-dropdown-container .group-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-primary);
+            margin-left: 2px;
+            text-align: left;
+        }
+
+        .dropdowns-row {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 10px;
+        }
+
+        .select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .select-wrapper select {
+            width: 100%;
+            padding: 14px 28px 14px 12px;
+            background-color: var(--input-bg);
+            border: 1.5px solid var(--input-border);
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            color: var(--text-primary);
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            transition: var(--transition);
+            height: 52px;
+        }
+
+        .select-wrapper select:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .select-arrow {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid var(--text-secondary);
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .select-wrapper select:focus + .select-arrow {
+            border-top-color: var(--accent-primary);
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 24px;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .primary-btn {
+            width: 100%;
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .primary-btn:active {
+            transform: translateY(0);
+        }
+
+        .secondary-btn {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .secondary-btn:hover {
+            background-color: var(--border-color);
+        }
+
+        .sm-btn {
+            padding: 8px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        /* Action Bar */
+        .action-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+        }
+
+        .action-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .action-bar .btn {
+            flex-shrink: 0;
+        }
+
+        /* Results Card Details */
+        .results-header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 20px;
+            border-bottom: 1.5px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        .baby-info h2 {
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .meta-item svg {
+            color: var(--accent-primary);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar-bg {
+            height: 8px;
+            background-color: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--success));
+            border-radius: 4px;
+            width: 0;
+            transition: width 0.5s ease-out;
+        }
+
+        /* Timeline Layout */
+        .timeline {
+            position: relative;
+            padding-left: 28px;
+            margin-top: 10px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 10px;
+            bottom: 20px;
+            width: 2px;
+            background-color: var(--timeline-line);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -28px;
+            top: 4px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: var(--bg-card);
+            border: 3px solid var(--border-color);
+            z-index: 2;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timeline-dot::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: transparent;
+            transition: var(--transition);
+        }
+
+        .timeline-content {
+            background-color: var(--input-bg);
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .timeline-content:hover {
+            transform: translateX(4px);
+            border-color: var(--accent-primary);
+        }
+
+        .timeline-title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .milestone-tag {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Checkbox */
+        .checkbox-container {
+            display: block;
+            position: relative;
+            padding-left: 24px;
+            cursor: pointer;
+            font-size: 14px;
+            user-select: none;
+            height: 20px;
+        }
+
+        .checkbox-container input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 20px;
+            width: 20px;
+            background-color: var(--bg-card);
+            border: 1.5px solid var(--input-border);
+            border-radius: 5px;
+            transition: var(--transition);
+        }
+
+        .checkbox-container:hover input ~ .checkmark {
+            border-color: var(--accent-primary);
+        }
+
+        .checkbox-container input:checked ~ .checkmark {
+            background-color: var(--success);
+            border-color: var(--success);
+        }
+
+        .checkmark::after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        .checkbox-container input:checked ~ .checkmark::after {
+            display: block;
+        }
+
+        .checkbox-container .checkmark::after {
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .timeline-date-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .exact-date {
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* Status Colors */
+        .timeline-item.completed .timeline-dot {
+            border-color: var(--success);
+            background-color: var(--success);
+        }
+        .timeline-item.completed .timeline-dot::after {
+            background-color: white;
+        }
+        .timeline-item.completed .timeline-content {
+            border-color: var(--success);
+            opacity: 0.85;
+        }
+        .timeline-item.completed .status-badge {
+            background-color: var(--success-light);
+            color: var(--success);
+        }
+
+        .timeline-item.overdue .timeline-dot {
+            border-color: var(--danger);
+        }
+        .timeline-item.overdue .status-badge {
+            background-color: var(--danger-light);
+            color: var(--danger);
+            animation: pulse 2s infinite;
+        }
+        .timeline-item.overdue .timeline-content {
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .timeline-item.upcoming .timeline-dot {
+            border-color: var(--info);
+        }
+        .timeline-item.upcoming .status-badge {
+            background-color: var(--info-light);
+            color: var(--info);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Details Drawers */
+        .timeline-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease-out;
+        }
+
+        .timeline-item.expanded .timeline-details {
+            max-height: 500px;
+            transition: max-height 0.4s ease-in;
+        }
+
+        .details-inner {
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .details-inner p {
+            margin-bottom: 8px;
+        }
+
+        .vaccine-list {
+            margin: 8px 0 12px 16px;
+        }
+
+        .vaccine-list li {
+            margin-bottom: 4px;
+        }
+
+        .vaccine-list strong {
+            color: var(--text-primary);
+        }
+
+        .item-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .btn-icon-only {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-card);
+            border: 1.5px solid var(--border-color);
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .btn-icon-only:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            background-color: var(--input-bg);
+        }
+
+        .btn-icon-only svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Footer status bar */
+        .app-footer-bar {
+            margin-top: auto;
+            padding: 24px 0 8px 0;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .app-footer-bar p {
+            margin-bottom: 4px;
+        }
+
+        /* Print styling */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .app-container {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+            .theme-toggle-btn,
+            .input-card,
+            .action-bar,
+            .app-footer-bar,
+            .item-actions,
+            .checkbox-container {
+                display: none !important;
+            }
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+            .timeline::before {
+                background-color: #000 !important;
+            }
+            .timeline-dot {
+                border-color: #000 !important;
+                background-color: #fff !important;
+            }
+            .timeline-content {
+                background-color: #fff !important;
+                border: 1px solid #ccc !important;
+                page-break-inside: avoid;
+            }
+            .timeline-details {
+                max-height: none !important;
+                display: block !important;
+            }
+            .exact-date {
+                color: black !important;
+            }
+        }
+
+        /* PWA Install Banner */
+        #install-banner {
+            display: none; align-items: center; gap: 12px;
+            background: var(--accent-gradient); color: white;
+            border-radius: var(--radius-sm); padding: 12px 16px;
+            margin-bottom: 16px; box-shadow: var(--shadow-md);
+            animation: slideDown 0.4s ease;
+        }
+        #install-banner.show { display: flex; }
+        @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+        #install-banner .bi { font-size:24px; flex-shrink:0; }
+        #install-banner .bt { flex:1; }
+        #install-banner .bt strong { display:block; font-size:14px; font-weight:700; }
+        #install-banner .bt span { font-size:12px; opacity:0.9; }
+        #install-banner .bb { display:flex; gap:8px; flex-shrink:0; }
+        .b-install { background:white; color:var(--accent-primary); border:none; border-radius:6px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; }
+        .b-dismiss { background:rgba(255,255,255,0.2); color:white; border:none; border-radius:6px; padding:7px 10px; font-size:13px; cursor:pointer; }
+        /* Offline bar */
+        #offline-bar { display:none; background:var(--warning); color:white; text-align:center; padding:6px; font-size:12px; font-weight:600; border-radius:var(--radius-sm); margin-bottom:12px; }
+        #offline-bar.show { display:block; }
+        #pwa-status { font-size:10px; color:var(--text-muted); margin-top:2px; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- PWA Install Banner -->
+        <div id="install-banner">
+            <div class="bi">📲</div>
+            <div class="bt"><strong>Install BabyVax App</strong><span>Add to home screen — works offline!</span></div>
+            <div class="bb">
+                <button class="b-install" id="install-btn">Install</button>
+                <button class="b-dismiss" id="dismiss-banner">✕</button>
+            </div>
+        </div>
+        <!-- Offline Bar -->
+        <div id="offline-bar">📵 You are offline — BabyVax still works!</div>
+
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle dark mode">
+            <!-- Sun Icon -->
+            <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+            </svg>
+            <!-- Moon Icon -->
+            <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </svg>
+        </button>
+
+        <header class="app-header">
+            <div class="logo-container">
+                <div class="logo-circle">
+                    <svg viewBox="0 0 100 100" class="logo-svg">
+                        <path d="M35,65 C35,75 42,82 50,82 C58,82 65,75 65,65 C65,58 58,45 50,30 C42,45 35,58 35,65 Z" fill="currentColor" opacity="0.3"></path>
+                        <circle cx="50" cy="65" r="10" fill="currentColor"></circle>
+                        <path d="M50,18 C46,18 43,21 43,25 C43,27 44,29 46,30 L46,45 L54,45 L54,30 C56,29 57,27 57,25 C57,21 54,18 50,18 Z" fill="currentColor"></path>
+                    </svg>
+                </div>
+                <h1>BabyVax</h1>
+                <p class="tagline">Personalized Vaccination Scheduler</p>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <!-- Input Card -->
+            <section class="card input-card">
+                <h2>Enter Details</h2>
+                <form id="scheduler-form" autocomplete="off" onsubmit="return false;">
+                    <div class="input-group">
+                        <input type="text" id="baby-name" required placeholder=" ">
+                        <label for="baby-name">Baby's Name</label>
+                        <span class="input-focus-line"></span>
+                    </div>
+                    
+                    <div class="date-dropdown-container">
+                        <span class="group-label">Date of Birth</span>
+                        <div class="dropdowns-row">
+                            <div class="select-wrapper">
+                                <select id="dob-day" required>
+                                    <option value="" disabled selected>Day</option>
+                                </select>
+                                <span class="select-arrow"></span>
+                            </div>
+                            <div class="select-wrapper">
+                                <select id="dob-month" required>
+                                    <option value="" disabled selected>Month</option>
+                                </select>
+                                <span class="select-arrow"></span>
+                            </div>
+                            <div class="select-wrapper">
+                                <select id="dob-year" required>
+                                    <option value="" disabled selected>Year</option>
+                                </select>
+                                <span class="select-arrow"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="date-dropdown-container">
+                        <span class="group-label">Country / Region schedule</span>
+                        <div class="select-wrapper" style="width:100%;">
+                            <select id="region-select" required>
+                                <option value="ap_anakapalli">Anakapalli District, Andhra Pradesh (India - UIP)</option>
+                                <option value="india_uip">India - National (UIP, govt free schedule)</option>
+                                <option value="usa">United States (CDC / AAP)</option>
+                                <option value="uk">United Kingdom (NHS)</option>
+                                <option value="australia">Australia (National Immunisation Program)</option>
+                                <option value="canada">Canada (NACI, general - check your province)</option>
+                                <option value="who_generic">Other / Generic WHO core schedule</option>
+                            </select>
+                            <span class="select-arrow"></span>
+                        </div>
+                        <p id="region-note" style="font-size:11px; color:var(--text-muted); margin-top:6px; line-height:1.5;"></p>
+                    </div>
+
+                    <button type="submit" id="calculate-btn" class="btn primary-btn">
+                        <span>Calculate Schedule</span>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Results Card (hidden by default) -->
+            <section id="results-card" class="card results-card hidden">
+                <div class="results-header">
+                    <div class="baby-info">
+                        <h2 id="display-baby-name">Baby Name</h2>
+                        <div class="meta-row">
+                            <span class="meta-item dob-meta">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                Born: <strong id="display-baby-dob">-</strong>
+                            </span>
+                            <span class="meta-item age-meta">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                Age: <strong id="display-baby-age">-</strong>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-text">
+                            <span>Progress</span>
+                            <span id="progress-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-bar">
+                    <button id="export-all-btn" class="btn secondary-btn sm-btn">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>Export All (.ics)</span>
+                    </button>
+                    <button id="share-btn" class="btn secondary-btn sm-btn">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                        <span>Share / Copy Text</span>
+                    </button>
+                    <button id="print-btn" class="btn secondary-btn sm-btn">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                        <span>Print</span>
+                    </button>
+                </div>
+
+                <!-- Vaccination Timeline -->
+                <div class="timeline" id="vaccine-timeline"></div>
+            </section>
+        </main>
+
+        <footer class="app-footer-bar">
+            <p>Made with Care for Parents &bull; BabyVax PWA v2.0</p><p id="pwa-status"></p>
+        </footer>
+    </div>
+
+    <!-- Embedded Scripts -->
+    <script>
+        // Vaccine schedules by country / region.
+        // ap_anakapalli is the original Anakapalli District (Andhra Pradesh, India) UIP-based
+        // schedule and is left exactly as it was originally built.
+        const schedulesByRegion = {
+            ap_anakapalli: [
+                {
+                    id: '0d', title: 'Zero Dose (At Birth)', offsetDays: 0, offsetMonths: null,
+                    vaccines: [
+                        { name: 'BCG', desc: 'Bacille Calmette-Guérin vaccine protecting against tuberculosis meningitis and disseminated TB.' },
+                        { name: 'OPV 0', desc: 'Oral Polio Vaccine Zero dose - establishes early mucosal immunity against poliomyelitis.' },
+                        { name: 'Hepatitis B (HepB 0)', desc: 'Hepatitis B birth dose - prevents mother-to-child transmission of the virus.' },
+                        { name: 'Vitamin K1', desc: 'Vitamin K injection/drops to prevent vitamin K deficiency bleeding (VKDB) in newborns.' }
+                    ]
+                },
+                {
+                    id: '6w', title: 'First Dose (6 Weeks)', offsetDays: 42, offsetMonths: null,
+                    vaccines: [
+                        { name: 'Pentavalent 1', desc: 'Protects against Diphtheria, Pertussis, Tetanus, Hepatitis B, and Haemophilus influenzae type b (Hib).' },
+                        { name: 'OPV 1', desc: 'Oral Polio Vaccine - Dose 1.' },
+                        { name: 'Rotavirus 1', desc: 'Oral vaccine protecting against severe rotavirus diarrhoea.' },
+                        { name: 'PCV 1', desc: 'Pneumococcal Conjugate Vaccine - Dose 1 (protects against pneumonia, meningitis).' },
+                        { name: 'IPV 1', desc: 'Inactivated Polio Vaccine - Dose 1 (injectable).' }
+                    ]
+                },
+                {
+                    id: '10w', title: 'Second Dose (10 Weeks)', offsetDays: 70, offsetMonths: null,
+                    vaccines: [
+                        { name: 'Pentavalent 2', desc: 'Dose 2 (Diphtheria, Pertussis, Tetanus, HepB, Hib).' },
+                        { name: 'OPV 2', desc: 'Oral Polio Vaccine - Dose 2.' },
+                        { name: 'Rotavirus 2', desc: 'Rotavirus vaccine - Dose 2.' }
+                    ]
+                },
+                {
+                    id: '14w', title: 'Third Dose (14 Weeks)', offsetDays: 98, offsetMonths: null,
+                    vaccines: [
+                        { name: 'Pentavalent 3', desc: 'Dose 3 (Diphtheria, Pertussis, Tetanus, HepB, Hib).' },
+                        { name: 'OPV 3', desc: 'Oral Polio Vaccine - Dose 3.' },
+                        { name: 'Rotavirus 3', desc: 'Rotavirus vaccine - Dose 3 (optional depending on vaccine brand).' },
+                        { name: 'PCV 2', desc: 'Pneumococcal Conjugate Vaccine - Dose 2.' },
+                        { name: 'IPV 2', desc: 'Inactivated Polio Vaccine - Dose 2 (injectable).' }
+                    ]
+                },
+                {
+                    id: '9m', title: '9 Months Vaccine', offsetDays: null, offsetMonths: 9,
+                    vaccines: [
+                        { name: 'MR 1', desc: 'Measles-Rubella vaccine - Dose 1.' },
+                        { name: 'PCV Booster', desc: 'Pneumococcal Conjugate Vaccine Booster dose.' },
+                        { name: 'Vitamin A', desc: 'Oral liquid dose 1 for vision health and immunity.' },
+                        { name: 'IPV 3', desc: 'Inactivated Polio Vaccine - Dose 3 (injectable).' }
+                    ]
+                },
+                {
+                    id: '16m', title: '16 Months Vaccine', offsetDays: null, offsetMonths: 16,
+                    vaccines: [
+                        { name: 'MR 2', desc: 'Measles-Rubella vaccine - Dose 2.' },
+                        { name: 'DPT Booster 1', desc: 'First Booster dose for Diphtheria, Pertussis, and Tetanus.' },
+                        { name: 'OPV Booster', desc: 'Oral Polio Booster dose.' },
+                        { name: 'Vitamin A', desc: 'Oral liquid dose 2 (usually administered with MR 2). Note: Needs to be repeated every six months up to 5 years of age.' }
+                    ]
+                },
+                {
+                    id: '22m', title: 'Vitamin A (22 Months)', offsetDays: null, offsetMonths: 22,
+                    vaccines: [{ name: 'Vitamin A (Dose 3)', desc: 'Oral liquid dose for vision health and immunity.' }]
+                },
+                {
+                    id: '28m', title: 'Vitamin A (28 Months)', offsetDays: null, offsetMonths: 28,
+                    vaccines: [{ name: 'Vitamin A (Dose 4)', desc: 'Oral liquid dose for vision health and immunity.' }]
+                },
+                {
+                    id: '34m', title: 'Vitamin A (34 Months)', offsetDays: null, offsetMonths: 34,
+                    vaccines: [{ name: 'Vitamin A (Dose 5)', desc: 'Oral liquid dose for vision health and immunity.' }]
+                },
+                {
+                    id: '40m', title: 'Vitamin A (40 Months)', offsetDays: null, offsetMonths: 40,
+                    vaccines: [{ name: 'Vitamin A (Dose 6)', desc: 'Oral liquid dose for vision health and immunity.' }]
+                },
+                {
+                    id: '46m', title: 'Vitamin A (46 Months)', offsetDays: null, offsetMonths: 46,
+                    vaccines: [{ name: 'Vitamin A (Dose 7)', desc: 'Oral liquid dose for vision health and immunity.' }]
+                },
+                {
+                    id: '52m', title: 'Vitamin A (52 Months)', offsetDays: null, offsetMonths: 52,
+                    vaccines: [{ name: 'Vitamin A (Dose 8)', desc: 'Oral liquid dose for vision health and immunity.' }]
+                },
+                {
+                    id: '58m', title: 'Vitamin A (58 Months)', offsetDays: null, offsetMonths: 58,
+                    vaccines: [{ name: 'Vitamin A (Dose 9)', desc: 'Oral liquid dose for vision health and immunity.' }]
+                },
+                {
+                    id: '5y', title: '5 Years Vaccine', offsetDays: null, offsetMonths: 60,
+                    vaccines: [
+                        { name: 'DPT Booster 2', desc: 'Second booster dose for Diphtheria, Pertussis, and Tetanus.' },
+                        { name: 'OPV Booster 2', desc: 'Oral Polio Vaccine Booster dose.' }
+                    ]
+                }
+            ],
+
+            // India national UIP schedule (same backbone as the AP schedule; Vitamin A series and JE
+            // vary by state, so this version keeps the core UIP vaccines without state add-ons).
+            india_uip: [
+                {
+                    id: '0d', title: 'Zero Dose (At Birth)', offsetDays: 0, offsetMonths: null,
+                    vaccines: [
+                        { name: 'BCG', desc: 'Protects against tuberculosis, including TB meningitis.' },
+                        { name: 'OPV 0', desc: 'Oral Polio Vaccine birth dose.' },
+                        { name: 'Hepatitis B (HepB 0)', desc: 'Birth dose, ideally within 24 hours.' }
+                    ]
+                },
+                {
+                    id: '6w', title: '6 Weeks', offsetDays: 42, offsetMonths: null,
+                    vaccines: [
+                        { name: 'Pentavalent 1', desc: 'Diphtheria, Pertussis, Tetanus, Hepatitis B, Hib.' },
+                        { name: 'OPV 1', desc: 'Oral Polio Vaccine - Dose 1.' },
+                        { name: 'IPV 1', desc: 'Inactivated Polio Vaccine - Dose 1.' },
+                        { name: 'Rotavirus 1', desc: 'Protects against severe rotavirus diarrhoea.' },
+                        { name: 'PCV 1', desc: 'Pneumococcal Conjugate Vaccine - Dose 1.' }
+                    ]
+                },
+                {
+                    id: '10w', title: '10 Weeks', offsetDays: 70, offsetMonths: null,
+                    vaccines: [
+                        { name: 'Pentavalent 2', desc: 'Dose 2.' },
+                        { name: 'OPV 2', desc: 'Dose 2.' },
+                        { name: 'Rotavirus 2', desc: 'Dose 2.' }
+                    ]
+                },
+                {
+                    id: '14w', title: '14 Weeks', offsetDays: 98, offsetMonths: null,
+                    vaccines: [
+                        { name: 'Pentavalent 3', desc: 'Dose 3.' },
+                        { name: 'OPV 3', desc: 'Dose 3.' },
+                        { name: 'IPV 2', desc: 'Dose 2.' },
+                        { name: 'Rotavirus 3', desc: 'Dose 3 (brand dependent).' },
+                        { name: 'PCV 2', desc: 'Dose 2.' }
+                    ]
+                },
+                {
+                    id: '9m', title: '9 Months', offsetDays: null, offsetMonths: 9,
+                    vaccines: [
+                        { name: 'MR 1', desc: 'Measles-Rubella, Dose 1.' },
+                        { name: 'PCV Booster', desc: 'Pneumococcal booster.' },
+                        { name: 'Vitamin A - Dose 1', desc: 'Supplementation for vision and immunity.' },
+                        { name: 'JE 1 (in endemic districts)', desc: 'Japanese Encephalitis, where applicable.' }
+                    ]
+                },
+                {
+                    id: '16m', title: '16-18 Months', offsetDays: null, offsetMonths: 16,
+                    vaccines: [
+                        { name: 'MR 2', desc: 'Measles-Rubella, Dose 2.' },
+                        { name: 'DPT Booster 1', desc: 'Diphtheria, Pertussis, Tetanus booster.' },
+                        { name: 'OPV Booster', desc: 'Oral Polio booster.' },
+                        { name: 'JE 2 (in endemic districts)', desc: 'Japanese Encephalitis, where applicable.' }
+                    ]
+                },
+                {
+                    id: '5y', title: '5-6 Years', offsetDays: null, offsetMonths: 60,
+                    vaccines: [{ name: 'DPT Booster 2', desc: 'Diphtheria, Pertussis, Tetanus booster.' }]
+                },
+                {
+                    id: '10y', title: '10 Years', offsetDays: null, offsetMonths: 120,
+                    vaccines: [{ name: 'TT / Td', desc: 'Tetanus and diphtheria booster.' }]
+                },
+                {
+                    id: '16y', title: '16 Years', offsetDays: null, offsetMonths: 192,
+                    vaccines: [{ name: 'TT / Td', desc: 'Tetanus and diphtheria booster.' }]
+                }
+            ],
+
+            // United States - based on the CDC/AAP combined schedule. The CDC made significant
+            // changes to the official US schedule in January 2026 and the AAP currently publishes
+            // its own version that differs in places, so dates here reflect the widely-used
+            // consensus core schedule. Always confirm current recommendations with your pediatrician.
+            usa: [
+                {
+                    id: '0d', title: 'Birth', offsetDays: 0, offsetMonths: null,
+                    vaccines: [{ name: 'Hepatitis B - Dose 1', desc: 'Within 24 hours of birth.' }]
+                },
+                {
+                    id: '1-2m', title: '1-2 Months', offsetDays: null, offsetMonths: 1,
+                    vaccines: [{ name: 'Hepatitis B - Dose 2', desc: 'Given 1-2 months after the birth dose.' }]
+                },
+                {
+                    id: '2m', title: '2 Months', offsetDays: null, offsetMonths: 2,
+                    vaccines: [
+                        { name: 'DTaP - Dose 1', desc: 'Diphtheria, tetanus, pertussis.' },
+                        { name: 'IPV - Dose 1', desc: 'Inactivated polio vaccine.' },
+                        { name: 'Hib - Dose 1', desc: 'Haemophilus influenzae type b.' },
+                        { name: 'PCV - Dose 1', desc: 'Pneumococcal conjugate vaccine.' },
+                        { name: 'Rotavirus - Dose 1', desc: 'Oral vaccine against rotavirus.' }
+                    ]
+                },
+                {
+                    id: '4m', title: '4 Months', offsetDays: null, offsetMonths: 4,
+                    vaccines: [
+                        { name: 'DTaP - Dose 2', desc: 'Dose 2.' },
+                        { name: 'IPV - Dose 2', desc: 'Dose 2.' },
+                        { name: 'Hib - Dose 2', desc: 'Dose 2.' },
+                        { name: 'PCV - Dose 2', desc: 'Dose 2.' },
+                        { name: 'Rotavirus - Dose 2', desc: 'Dose 2.' }
+                    ]
+                },
+                {
+                    id: '6m', title: '6 Months', offsetDays: null, offsetMonths: 6,
+                    vaccines: [
+                        { name: 'DTaP - Dose 3', desc: 'Dose 3.' },
+                        { name: 'Hib - Dose 3 (brand dependent)', desc: 'Some Hib brands need a 3rd dose at this age.' },
+                        { name: 'PCV - Dose 3', desc: 'Dose 3.' },
+                        { name: 'Hepatitis B - Dose 3', desc: 'Final dose, given 6-18 months.' },
+                        { name: 'Rotavirus - Dose 3 (brand dependent)', desc: 'RotaTeq brand needs a 3rd dose.' },
+                        { name: 'Influenza (seasonal, from 6 months)', desc: 'Annual flu vaccine once a child turns 6 months old.' }
+                    ]
+                },
+                {
+                    id: '12-15m', title: '12-15 Months', offsetDays: null, offsetMonths: 12,
+                    vaccines: [
+                        { name: 'MMR - Dose 1', desc: 'Measles, mumps, rubella.' },
+                        { name: 'Varicella - Dose 1', desc: 'Chickenpox.' },
+                        { name: 'Hib - Booster', desc: 'Final Hib dose.' },
+                        { name: 'PCV - Booster', desc: 'Final pneumococcal dose.' },
+                        { name: 'Hepatitis A - Dose 1', desc: 'First of a 2-dose series, 6 months apart.' }
+                    ]
+                },
+                {
+                    id: '15-18m', title: '15-18 Months', offsetDays: null, offsetMonths: 16,
+                    vaccines: [{ name: 'DTaP - Dose 4', desc: 'Fourth dose of the DTaP series.' }]
+                },
+                {
+                    id: '18-23m', title: '18-23 Months', offsetDays: null, offsetMonths: 18,
+                    vaccines: [{ name: 'Hepatitis A - Dose 2', desc: 'Completes the Hepatitis A series.' }]
+                },
+                {
+                    id: '4-6y', title: '4-6 Years', offsetDays: null, offsetMonths: 60,
+                    vaccines: [
+                        { name: 'DTaP - Dose 5', desc: 'Final DTaP dose before school entry.' },
+                        { name: 'IPV - Dose 4', desc: 'Final polio dose.' },
+                        { name: 'MMR - Dose 2', desc: 'Second MMR dose.' },
+                        { name: 'Varicella - Dose 2', desc: 'Second chickenpox dose.' }
+                    ]
+                }
+            ],
+
+            // United Kingdom - NHS routine schedule effective from January 2026.
+            uk: [
+                {
+                    id: '8w', title: '8 Weeks', offsetDays: 56, offsetMonths: null,
+                    vaccines: [
+                        { name: '6-in-1 vaccine - Dose 1', desc: 'Diphtheria, tetanus, pertussis, polio, Hib, hepatitis B.' },
+                        { name: 'Rotavirus - Dose 1', desc: 'Oral vaccine against rotavirus diarrhoea.' },
+                        { name: 'MenB - Dose 1', desc: 'Meningococcal group B.' }
+                    ]
+                },
+                {
+                    id: '12w', title: '12 Weeks', offsetDays: 84, offsetMonths: null,
+                    vaccines: [
+                        { name: '6-in-1 vaccine - Dose 2', desc: 'Dose 2.' },
+                        { name: 'MenB - Dose 2', desc: 'Moved earlier to 12 weeks from July 2025.' },
+                        { name: 'Rotavirus - Dose 2', desc: 'Dose 2.' }
+                    ]
+                },
+                {
+                    id: '16w', title: '16 Weeks', offsetDays: 112, offsetMonths: null,
+                    vaccines: [
+                        { name: '6-in-1 vaccine - Dose 3', desc: 'Dose 3.' },
+                        { name: 'Pneumococcal (PCV)', desc: 'Moved to 16 weeks from July 2025.' }
+                    ]
+                },
+                {
+                    id: '1y', title: '1 Year', offsetDays: null, offsetMonths: 12,
+                    vaccines: [
+                        { name: 'MMRV', desc: 'Measles, mumps, rubella and chickenpox combined dose, introduced January 2026.' },
+                        { name: 'Pneumococcal - Booster', desc: 'Booster dose.' },
+                        { name: 'MenB - Booster', desc: 'Booster dose.' }
+                    ]
+                },
+                {
+                    id: '18m', title: '18 Months', offsetDays: null, offsetMonths: 18,
+                    vaccines: [
+                        { name: '6-in-1 - Booster', desc: 'New appointment from January 2026 for children born on/after 1 July 2024.' },
+                        { name: 'MMRV - Dose 2', desc: 'Second combined dose.' }
+                    ]
+                },
+                {
+                    id: '3y4m', title: '3 Years 4 Months', offsetDays: null, offsetMonths: 40,
+                    vaccines: [
+                        { name: '4-in-1 pre-school booster', desc: 'Diphtheria, tetanus, pertussis, polio.' },
+                        { name: 'MMR catch-up (if needed)', desc: 'Given if the child has not completed both MMR/MMRV doses.' }
+                    ]
+                }
+            ],
+
+            // Australia - National Immunisation Program (NIP) schedule current from January 2026.
+            australia: [
+                {
+                    id: 'birth', title: 'At Birth', offsetDays: 0, offsetMonths: null,
+                    vaccines: [{ name: 'Hepatitis B', desc: 'Ideally within 24 hours of birth.' }]
+                },
+                {
+                    id: '6w', title: '6-8 Weeks (2 Months)', offsetDays: 42, offsetMonths: null,
+                    vaccines: [
+                        { name: '6-in-1 (DTPa-hepB-IPV-Hib)', desc: 'Diphtheria, tetanus, pertussis, hepatitis B, polio, Hib.' },
+                        { name: 'Pneumococcal (13vPCV)', desc: 'Dose 1.' },
+                        { name: 'Rotavirus', desc: 'Dose 1 - must be given by 14 weeks of age.' }
+                    ]
+                },
+                {
+                    id: '4m', title: '4 Months', offsetDays: null, offsetMonths: 4,
+                    vaccines: [
+                        { name: '6-in-1 (DTPa-hepB-IPV-Hib)', desc: 'Dose 2.' },
+                        { name: 'Pneumococcal (13vPCV)', desc: 'Dose 2.' },
+                        { name: 'Rotavirus', desc: 'Dose 2 - must be given by 24 weeks of age.' }
+                    ]
+                },
+                {
+                    id: '6m', title: '6 Months', offsetDays: null, offsetMonths: 6,
+                    vaccines: [
+                        { name: '6-in-1 (DTPa-hepB-IPV-Hib)', desc: 'Dose 3.' },
+                        { name: 'Rotavirus (brand dependent)', desc: 'Dose 3 for some brands.' }
+                    ]
+                },
+                {
+                    id: '12m', title: '12 Months', offsetDays: null, offsetMonths: 12,
+                    vaccines: [
+                        { name: 'Meningococcal ACWY', desc: 'Single dose.' },
+                        { name: 'Pneumococcal (13vPCV) - Booster', desc: 'Booster dose.' },
+                        { name: 'MMR - Dose 1', desc: 'Measles, mumps, rubella.' }
+                    ]
+                },
+                {
+                    id: '18m', title: '18 Months', offsetDays: null, offsetMonths: 18,
+                    vaccines: [
+                        { name: 'MMRV', desc: 'Measles, mumps, rubella, varicella.' },
+                        { name: 'DTPa - Booster', desc: 'Diphtheria, tetanus, pertussis booster.' },
+                        { name: 'Hib - Booster', desc: 'Final Hib dose.' }
+                    ]
+                },
+                {
+                    id: '4y', title: '4 Years', offsetDays: null, offsetMonths: 48,
+                    vaccines: [
+                        { name: 'DTPa - Pre-school booster', desc: 'Diphtheria, tetanus, pertussis.' },
+                        { name: 'IPV - Booster', desc: 'Polio booster.' }
+                    ]
+                }
+            ],
+
+            // Canada - general schedule based on NACI guidance. Provinces and territories set their
+            // own exact timing, so this is a representative pattern - always check your provincial schedule.
+            canada: [
+                {
+                    id: 'birth', title: 'At Birth', offsetDays: 0, offsetMonths: null,
+                    vaccines: [{ name: 'Hepatitis B (some provinces)', desc: 'Birth dose where the provincial schedule includes it; others start at 2 months.' }]
+                },
+                {
+                    id: '2m', title: '2 Months', offsetDays: null, offsetMonths: 2,
+                    vaccines: [
+                        { name: 'DTaP-IPV-Hib-HepB - Dose 1', desc: 'Combined 5-in-1 or 6-in-1 vaccine.' },
+                        { name: 'Pneumococcal conjugate - Dose 1', desc: 'Dose 1.' },
+                        { name: 'Rotavirus - Dose 1', desc: 'Oral vaccine.' }
+                    ]
+                },
+                {
+                    id: '4m', title: '4 Months', offsetDays: null, offsetMonths: 4,
+                    vaccines: [
+                        { name: 'DTaP-IPV-Hib-HepB - Dose 2', desc: 'Dose 2.' },
+                        { name: 'Pneumococcal conjugate - Dose 2', desc: 'Dose 2.' },
+                        { name: 'Rotavirus - Dose 2', desc: 'Dose 2.' }
+                    ]
+                },
+                {
+                    id: '6m', title: '6 Months', offsetDays: null, offsetMonths: 6,
+                    vaccines: [
+                        { name: 'DTaP-IPV-Hib-HepB - Dose 3', desc: 'Dose 3 (some provinces).' },
+                        { name: 'Pneumococcal conjugate - Dose 3 (some provinces)', desc: 'Varies by province.' },
+                        { name: 'Rotavirus - Dose 3 (brand dependent)', desc: 'For 3-dose rotavirus brands.' }
+                    ]
+                },
+                {
+                    id: '12m', title: '12 Months', offsetDays: null, offsetMonths: 12,
+                    vaccines: [
+                        { name: 'MMR - Dose 1', desc: 'Measles, mumps, rubella.' },
+                        { name: 'Meningococcal C (or ACWY)', desc: 'Varies by province.' },
+                        { name: 'Pneumococcal conjugate - Booster', desc: 'Booster dose.' },
+                        { name: 'Varicella - Dose 1', desc: 'Chickenpox.' }
+                    ]
+                },
+                {
+                    id: '18m', title: '18 Months', offsetDays: null, offsetMonths: 18,
+                    vaccines: [
+                        { name: 'DTaP-IPV-Hib - Booster', desc: 'Booster dose.' },
+                        { name: 'MMRV / Varicella - Dose 2 (some provinces)', desc: 'Varies by province.' }
+                    ]
+                },
+                {
+                    id: '4-6y', title: '4-6 Years', offsetDays: null, offsetMonths: 60,
+                    vaccines: [
+                        { name: 'DTaP-IPV - Booster', desc: 'Pre-school booster.' },
+                        { name: 'MMR - Dose 2', desc: 'Second MMR dose.' }
+                    ]
+                }
+            ],
+
+            // Generic / WHO core schedule for countries not listed above.
+            who_generic: [
+                {
+                    id: 'birth', title: 'At Birth', offsetDays: 0, offsetMonths: null,
+                    vaccines: [
+                        { name: 'BCG (in high-TB-burden countries)', desc: 'Protects against tuberculosis.' },
+                        { name: 'Hepatitis B - birth dose', desc: 'Prevents mother-to-child transmission.' },
+                        { name: 'Polio - birth dose', desc: 'Oral or injectable depending on country.' }
+                    ]
+                },
+                {
+                    id: '6w', title: '6 Weeks', offsetDays: 42, offsetMonths: null,
+                    vaccines: [
+                        { name: 'DTP-containing combination - Dose 1', desc: 'Diphtheria, tetanus, pertussis (often with Hib and hepatitis B).' },
+                        { name: 'Polio - Dose 1', desc: 'Dose 1.' },
+                        { name: 'Pneumococcal - Dose 1', desc: 'Dose 1.' },
+                        { name: 'Rotavirus - Dose 1', desc: 'Dose 1.' }
+                    ]
+                },
+                {
+                    id: '10w', title: '10 Weeks', offsetDays: 70, offsetMonths: null,
+                    vaccines: [
+                        { name: 'DTP-containing combination - Dose 2', desc: 'Dose 2.' },
+                        { name: 'Polio - Dose 2', desc: 'Dose 2.' },
+                        { name: 'Rotavirus - Dose 2', desc: 'Dose 2.' }
+                    ]
+                },
+                {
+                    id: '14w', title: '14 Weeks', offsetDays: 98, offsetMonths: null,
+                    vaccines: [
+                        { name: 'DTP-containing combination - Dose 3', desc: 'Dose 3.' },
+                        { name: 'Polio - Dose 3', desc: 'Dose 3.' },
+                        { name: 'Pneumococcal - Dose 2', desc: 'Dose 2.' }
+                    ]
+                },
+                {
+                    id: '9m', title: '9 Months', offsetDays: null, offsetMonths: 9,
+                    vaccines: [{ name: 'Measles-containing vaccine - Dose 1', desc: 'Often combined with rubella.' }]
+                },
+                {
+                    id: '15m', title: '15-18 Months', offsetDays: null, offsetMonths: 15,
+                    vaccines: [
+                        { name: 'Measles-containing vaccine - Dose 2', desc: 'Often combined with rubella.' },
+                        { name: 'DTP - Booster', desc: 'Booster dose.' }
+                    ]
+                },
+                {
+                    id: '5y', title: '4-6 Years', offsetDays: null, offsetMonths: 60,
+                    vaccines: [{ name: 'DTP / Polio - Booster', desc: 'Pre-school booster.' }]
+                }
+            ]
+        };
+
+        // Short note shown under the region dropdown for each schedule.
+        const regionNotes = {
+            ap_anakapalli: 'Based on the Universal Immunisation Programme (UIP) schedule as followed in Anakapalli district, Andhra Pradesh. Confirm with your local PHC / Anganwadi for any district-specific additions.',
+            india_uip: 'India\u2019s national UIP schedule, free at government health centres. Many pediatricians (IAP) also recommend extra vaccines not on this free list \u2014 ask your doctor.',
+            usa: 'Based on the CDC/AAP combined schedule. The US schedule changed significantly in January 2026 and currently the CDC and the American Academy of Pediatrics publish differing versions \u2014 confirm current recommendations with your pediatrician.',
+            uk: 'Based on the NHS / UK Health Security Agency routine schedule effective January 2026. Your GP practice sets exact appointment dates.',
+            australia: 'Based on the Australian National Immunisation Program (NIP), current from January 2026. Aboriginal and Torres Strait Islander children may have additional vaccines \u2014 check with your GP.',
+            canada: 'Canada has no single national schedule \u2014 each province/territory sets its own timing. This is a representative pattern only; check your provincial immunisation schedule.',
+            who_generic: 'A simplified baseline based on WHO core childhood immunisation recommendations. Always confirm the exact schedule used in your country.'
+        };
+
+        let currentRegion = 'ap_anakapalli';
+        let vaccineMilestones = schedulesByRegion[currentRegion];
+
+        // Cache elements
+        const themeToggle = document.getElementById('theme-toggle');
+        const form = document.getElementById('scheduler-form');
+        const babyNameInput = document.getElementById('baby-name');
+        const dobDay = document.getElementById('dob-day');
+        const dobMonth = document.getElementById('dob-month');
+        const dobYear = document.getElementById('dob-year');
+        const regionSelect = document.getElementById('region-select');
+        const regionNote = document.getElementById('region-note');
+        const resultsCard = document.getElementById('results-card');
+        const displayBabyName = document.getElementById('display-baby-name');
+        const displayBabyDob = document.getElementById('display-baby-dob');
+        const displayBabyAge = document.getElementById('display-baby-age');
+        const timelineContainer = document.getElementById('vaccine-timeline');
+        const exportAllBtn = document.getElementById('export-all-btn');
+        const shareBtn = document.getElementById('share-btn');
+        const printBtn = document.getElementById('print-btn');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const progressPercentage = document.getElementById('progress-percentage');
+
+        // Date addition helpers
+        function addDays(date, days) {
+            const result = new Date(date);
+            result.setDate(result.getDate() + days);
+            return result;
+        }
+
+        function addMonths(date, months) {
+            const result = new Date(date);
+            const expectedMonth = result.getMonth() + months;
+            result.setMonth(expectedMonth);
+            if (result.getMonth() !== (expectedMonth % 12 + 12) % 12) {
+                result.setDate(0); // Go to last day of previous month
+            }
+            return result;
+        }
+
+        // Calculate age string
+        function getAgeString(dob) {
+            const birthDate = new Date(dob);
+            const today = new Date();
+            birthDate.setHours(0,0,0,0);
+            today.setHours(0,0,0,0);
+            
+            if (birthDate > today) return "Not born yet";
+            
+            const diffTime = Math.abs(today - birthDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 7) {
+                return `${diffDays} day${diffDays > 1 ? 's' : ''} old`;
+            }
+            
+            const diffWeeks = Math.floor(diffDays / 7);
+            if (diffWeeks < 4) {
+                return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} old`;
+            }
+            
+            let months = (today.getFullYear() - birthDate.getFullYear()) * 12 + today.getMonth() - birthDate.getMonth();
+            if (today.getDate() < birthDate.getDate()) {
+                months--;
+            }
+            
+            if (months < 1) {
+                return `${diffWeeks} weeks old`;
+            }
+            
+            if (months < 12) {
+                const remainingWeeks = Math.floor((diffDays - (months * 30.4375)) / 7);
+                return `${months} month${months > 1 ? 's' : ''} ${remainingWeeks > 0 ? remainingWeeks + ' w' : ''} old`;
+            }
+            
+            const years = Math.floor(months / 12);
+            const remainingMonths = months % 12;
+            return `${years} yr${years > 1 ? 's' : ''} ${remainingMonths > 0 ? remainingMonths + ' mo' : ''} old`;
+        }
+
+        // Format dates
+        function formatDate(date) {
+            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function formatDateICS(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
+        }
+
+        // Calculate schedule dates
+        function calculateTimeline(dob) {
+            const birthDate = new Date(dob);
+            birthDate.setHours(0, 0, 0, 0);
+            
+            return vaccineMilestones.map(m => {
+                let vaccineDate;
+                if (m.offsetDays !== null) {
+                    vaccineDate = addDays(birthDate, m.offsetDays);
+                } else {
+                    vaccineDate = addMonths(birthDate, m.offsetMonths);
+                }
+                return { ...m, exactDate: vaccineDate };
+            });
+        }
+
+        // Local storage status keys
+        function getCompletedKey(babyName, dob, milestoneId) {
+            const cleanName = babyName.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            return `babyvax_completed_${currentRegion}_${cleanName}_${dob}_${milestoneId}`;
+        }
+
+        function saveBabyDetails(name, dob) {
+            localStorage.setItem('babyvax_name', name);
+            localStorage.setItem('babyvax_dob', dob);
+            localStorage.setItem('babyvax_region', currentRegion);
+        }
+
+        function loadBabyDetails() {
+            const savedName = localStorage.getItem('babyvax_name');
+            const savedDob = localStorage.getItem('babyvax_dob');
+            const savedRegion = localStorage.getItem('babyvax_region');
+            if (savedRegion && schedulesByRegion[savedRegion]) {
+                currentRegion = savedRegion;
+                vaccineMilestones = schedulesByRegion[currentRegion];
+                regionSelect.value = currentRegion;
+            }
+            updateRegionNote();
+            if (savedName && savedDob) {
+                babyNameInput.value = savedName;
+                setDobValue(savedDob);
+                generateSchedule(savedName, savedDob);
+            }
+        }
+
+        function updateRegionNote() {
+            regionNote.textContent = regionNotes[currentRegion] || '';
+        }
+
+        regionSelect.addEventListener('change', () => {
+            currentRegion = regionSelect.value;
+            vaccineMilestones = schedulesByRegion[currentRegion];
+            updateRegionNote();
+            const dob = getDobValue();
+            if (dob && babyNameInput.value) {
+                generateSchedule(babyNameInput.value, dob);
+            }
+        });
+
+        // Generate timeline lists
+        function renderTimeline(timeline, babyName, dob) {
+            timelineContainer.innerHTML = '';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            let completedCount = 0;
+
+            timeline.forEach((item) => {
+                const storageKey = getCompletedKey(babyName, dob, item.id);
+                const isCompleted = localStorage.getItem(storageKey) === 'true';
+                
+                if (isCompleted) completedCount++;
+
+                const isOverdue = !isCompleted && item.exactDate < today;
+                const statusClass = isCompleted ? 'completed' : (isOverdue ? 'overdue' : 'upcoming');
+                const statusLabel = isCompleted ? 'Completed' : (isOverdue ? 'Overdue' : 'Upcoming');
+                
+                const relativeTime = getRelativeTime(item.exactDate, today);
+                const timelineItem = document.createElement('div');
+                timelineItem.className = `timeline-item ${statusClass}`;
+                timelineItem.id = `item-${item.id}`;
+
+                const vaccinesHTML = item.vaccines.map(v => 
+                    `<li><strong>${v.name}</strong>: ${v.desc}</li>`
+                ).join('');
+
+                timelineItem.innerHTML = `
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content" onclick="toggleExpand('${item.id}')">
+                        <div class="timeline-title-row">
+                            <span class="milestone-tag">${item.title}</span>
+                            <label class="checkbox-container" onclick="event.stopPropagation();">
+                                <input type="checkbox" id="check-${item.id}" ${isCompleted ? 'checked' : ''} onchange="toggleComplete('${item.id}', '${babyName}', '${dob}')">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                        <div class="timeline-date-row">
+                            <span class="exact-date">${formatDate(item.exactDate)}</span>
+                            <span class="status-badge">${statusLabel}</span>
+                        </div>
+                        <div class="timeline-details">
+                            <div class="details-inner">
+                                <p class="relative-time-text">${relativeTime}</p>
+                                <ul class="vaccine-list">
+                                    ${vaccinesHTML}
+                                </ul>
+                                <div class="item-actions" onclick="event.stopPropagation();">
+                                    <button class="btn-icon-only" title="Add to Calendar" onclick="exportSingleICS('${item.title}', '${formatDateICS(item.exactDate)}', '${item.vaccines.map(v => v.name).join(', ')}')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M12 12v6M9 15h6"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                timelineContainer.appendChild(timelineItem);
+            });
+
+            const percent = Math.round((completedCount / timeline.length) * 100);
+            progressBarFill.style.width = `${percent}%`;
+            progressPercentage.innerText = `${percent}%`;
+        }
+
+        // Relative time helper
+        function getRelativeTime(vaccineDate, today) {
+            const diff = vaccineDate - today;
+            const diffDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) {
+                return "Due today";
+            } else if (diffDays < 0) {
+                const absDays = Math.abs(diffDays);
+                return `Overdue by ${absDays} day${absDays > 1 ? 's' : ''}`;
+            } else {
+                if (diffDays < 7) {
+                    return `Due in ${diffDays} day${diffDays > 1 ? 's' : ''}`;
+                }
+                const diffWeeks = Math.floor(diffDays / 7);
+                if (diffWeeks < 4) {
+                    return `Due in ${diffWeeks} week${diffWeeks > 1 ? 's' : ''}`;
+                }
+                const diffMonths = Math.floor(diffDays / 30.4);
+                if (diffMonths < 1) {
+                    return `Due in ${diffWeeks} weeks`;
+                }
+                return `Due in approximately ${diffMonths} month${diffMonths > 1 ? 's' : ''}`;
+            }
+        }
+
+        function toggleExpand(milestoneId) {
+            const item = document.getElementById(`item-${milestoneId}`);
+            item.classList.toggle('expanded');
+        }
+
+        function toggleComplete(milestoneId, babyName, dob) {
+            const checkbox = document.getElementById(`check-${milestoneId}`);
+            const storageKey = getCompletedKey(babyName, dob, milestoneId);
+            localStorage.setItem(storageKey, checkbox.checked);
+            const timeline = calculateTimeline(dob);
+            renderTimeline(timeline, babyName, dob);
+        }
+
+        function generateSchedule(babyName, dob) {
+            if (!babyName || !dob) return;
+            saveBabyDetails(babyName, dob);
+            
+            displayBabyName.innerText = babyName;
+            displayBabyDob.innerText = formatDate(new Date(dob));
+            displayBabyAge.innerText = getAgeString(dob);
+            
+            const timeline = calculateTimeline(dob);
+            renderTimeline(timeline, babyName, dob);
+            
+            resultsCard.classList.remove('hidden');
+            resultsCard.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ICS Generator functions
+        function buildICSString(events) {
+            let ics = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Antigravity//BabyVax//EN',
+                'CALSCALE:GREGORIAN',
+                'METHOD:PUBLISH'
+            ];
+            
+            events.forEach(evt => {
+                const dateStr = evt.date;
+                ics = ics.concat([
+                    'BEGIN:VEVENT',
+                    `UID:${Date.now()}_${Math.random().toString(36).substr(2, 9)}@babyvax.app`,
+                    `DTSTAMP:${formatDateICS(new Date())}T000000Z`,
+                    `DTSTART;VALUE=DATE:${dateStr}`,
+                    `DTEND;VALUE=DATE:${dateStr}`,
+                    `SUMMARY:${evt.title}`,
+                    `DESCRIPTION:${evt.description.replace(/,/g, '\\,')}`,
+                    'STATUS:CONFIRMED',
+                    'SEQUENCE:0',
+                    'BEGIN:VALARM',
+                    'TRIGGER:-P1D',
+                    'ACTION:DISPLAY',
+                    'DESCRIPTION:Reminder: Vaccination tomorrow',
+                    'END:VALARM',
+                    'END:VEVENT'
+                ]);
+            });
+            
+            ics.push('END:VCALENDAR');
+            return ics.join('\r\n');
+        }
+
+        function exportSingleICS(title, dateStr, description) {
+            const content = buildICSString([{
+                title: title,
+                date: dateStr,
+                description: `Vaccines: ${description}`
+            }]);
+            downloadFile(content, `${title.replace(/\s+/g, '_')}.ics`);
+        }
+
+        function exportAllICS() {
+            const dob = getDobValue();
+            const babyName = babyNameInput.value;
+            if (!dob) return;
+            
+            const timeline = calculateTimeline(dob);
+            const events = timeline.map(item => ({
+                title: `${babyName}'s ${item.title}`,
+                date: formatDateICS(item.exactDate),
+                description: `Vaccines: ${item.vaccines.map(v => v.name).join(', ')}`
+            }));
+            
+            const content = buildICSString(events);
+            downloadFile(content, `${babyName.trim().replace(/\s+/g, '_')}_vaccination_schedule.ics`);
+        }
+
+        function downloadFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Clipboard copying for WhatsApp sharing (restricted contexts helper)
+        function shareSchedule() {
+            const name = babyNameInput.value;
+            const dob = getDobValue();
+            if (!dob) return;
+            
+            const timeline = calculateTimeline(dob);
+            let shareText = `👶 *${name}'s Vaccination Schedule (BabyVax)*\n`;
+            shareText += `Born: ${formatDate(new Date(dob))}\n\n`;
+            
+            timeline.forEach(item => {
+                shareText += `📅 *${item.title}*\n`;
+                shareText += `Date: ${formatDate(item.exactDate)}\n`;
+                shareText += `Vaccines: ${item.vaccines.map(v => v.name).join(', ')}\n\n`;
+            });
+            
+            shareText += `Created using BabyVax App`;
+
+            if (navigator.share && window.isSecureContext) {
+                navigator.share({
+                    title: `${name}'s Vaccine Schedule`,
+                    text: shareText
+                }).catch(err => console.log(err));
+            } else {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('Schedule copied to clipboard! You can now paste it directly into WhatsApp.');
+                }).catch(() => {
+                    alert('Failed to copy automatically. Please copy the schedule text manually.');
+                });
+            }
+        }
+
+        // Events listeners
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            generateSchedule(babyNameInput.value, getDobValue());
+        });
+
+        exportAllBtn.addEventListener('click', exportAllICS);
+        shareBtn.addEventListener('click', shareSchedule);
+        printBtn.addEventListener('click', () => window.print());
+
+        // Theme Switcher
+        function initTheme() {
+            const savedTheme = localStorage.getItem('babyvax_theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.body.classList.add('dark-theme');
+            } else {
+                document.body.classList.remove('dark-theme');
+            }
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.body.classList.toggle('dark-theme');
+            localStorage.setItem('babyvax_theme', isDark ? 'dark' : 'light');
+        });
+
+        // Date dropdown populators and helpers
+        function populateDateDropdowns() {
+            // Populate years (2000 to 2100)
+            dobYear.innerHTML = '<option value="" disabled selected>Year</option>';
+            for (let y = 2000; y <= 2100; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                dobYear.appendChild(opt);
+            }
+            
+            // Populate months
+            const months = [
+                "January", "February", "March", "April", "May", "June", 
+                "July", "August", "September", "October", "November", "December"
+            ];
+            dobMonth.innerHTML = '<option value="" disabled selected>Month</option>';
+            months.forEach((m, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = m;
+                dobMonth.appendChild(opt);
+            });
+            
+            // Dynamically calculate days in selected month & year
+            function updateDays() {
+                const selectedMonth = parseInt(dobMonth.value);
+                const selectedYear = parseInt(dobYear.value);
+                
+                let daysInMonth = 31;
+                if (!isNaN(selectedMonth)) {
+                    if ([3, 5, 8, 10].includes(selectedMonth)) {
+                        daysInMonth = 30;
+                    } else if (selectedMonth === 1) {
+                        const isLeap = !isNaN(selectedYear) && ((selectedYear % 4 === 0 && selectedYear % 100 !== 0) || (selectedYear % 400 === 0));
+                        daysInMonth = isLeap ? 29 : 28;
+                    }
+                }
+                
+                const previousVal = dobDay.value;
+                dobDay.innerHTML = '<option value="" disabled selected>Day</option>';
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    dobDay.appendChild(opt);
+                }
+                
+                if (previousVal && parseInt(previousVal) <= daysInMonth) {
+                    dobDay.value = previousVal;
+                }
+            }
+            
+            dobMonth.addEventListener('change', updateDays);
+            dobYear.addEventListener('change', updateDays);
+            
+            // Initial call
+            updateDays();
+        }
+
+        function getDobValue() {
+            const day = dobDay.value;
+            const month = dobMonth.value;
+            const year = dobYear.value;
+            if (!day || !month || !year) return '';
+            
+            const paddedMonth = String(parseInt(month) + 1).padStart(2, '0');
+            const paddedDay = String(day).padStart(2, '0');
+            return `${year}-${paddedMonth}-${paddedDay}`;
+        }
+
+        function setDobValue(dobStr) {
+            if (!dobStr) return;
+            const parts = dobStr.split('-');
+            if (parts.length !== 3) return;
+            
+            dobYear.value = parts[0];
+            dobMonth.value = parseInt(parts[1]) - 1;
+            
+            // Trigger days reload
+            const event = new Event('change');
+            dobMonth.dispatchEvent(event);
+            
+            dobDay.value = parseInt(parts[2]);
+        }
+
+        // Init
+        window.addEventListener('DOMContentLoaded', () => {
+            populateDateDropdowns();
+            initTheme();
+            loadBabyDetails();
+        });
+    </script>
+
+    <script>
+    // PWA: Inject Manifest
+    (function(){
+        const m = {
+            name:"BabyVax - Vaccination Scheduler", short_name:"BabyVax",
+            description:"Track and schedule newborn vaccinations",
+            start_url:"./", display:"standalone",
+            background_color:"#6366f1", theme_color:"#6366f1",
+            orientation:"portrait",
+            icons:[
+                {src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%236366f1'/%3E%3Ccircle cx='96' cy='130' r='20' fill='white'/%3E%3C/svg%3E",sizes:"192x192",type:"image/svg+xml",purpose:"any maskable"},
+                {src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%236366f1'/%3E%3Ccircle cx='256' cy='345' r='52' fill='white'/%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}
+            ],
+            categories:["health","medical"]
+        };
+        const b=new Blob([JSON.stringify(m)],{type:'application/json'});
+        document.getElementById('pwa-manifest').href=URL.createObjectURL(b);
+    })();
+
+    // PWA: Service Worker via Blob
+    if('serviceWorker' in navigator){
+        const sw=`const CACHE='babyvax-v2';
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/']).catch(()=>{})));});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{if(!res||res.status!==200||res.type!=='basic')return res;const c=res.clone();caches.open(CACHE).then(ca=>ca.put(e.request,c));return res;}).catch(()=>caches.match('/'))));});`;
+        const u=URL.createObjectURL(new Blob([sw],{type:'application/javascript'}));
+        navigator.serviceWorker.register(u,{scope:'./'})
+            .then(()=>{document.getElementById('pwa-status').textContent='✅ Offline-ready';})
+            .catch(()=>{document.getElementById('pwa-status').textContent='ℹ️ Save page to use offline';});
+    }
+
+    // PWA: Install prompt
+    let dp=null;
+    const ib=document.getElementById('install-banner');
+    window.addEventListener('beforeinstallprompt',e=>{
+        e.preventDefault(); dp=e;
+        if(!localStorage.getItem('babyvax_nodismiss')) ib.classList.add('show');
+    });
+    document.getElementById('install-btn').addEventListener('click',async()=>{
+        if(!dp)return; dp.prompt();
+        const {outcome}=await dp.userChoice; dp=null; ib.classList.remove('show');
+        if(outcome==='accepted') document.getElementById('pwa-status').textContent='📱 App installed!';
+    });
+    document.getElementById('dismiss-banner').addEventListener('click',()=>{
+        ib.classList.remove('show'); localStorage.setItem('babyvax_nodismiss','1');
+    });
+    window.addEventListener('appinstalled',()=>{ib.classList.remove('show');document.getElementById('pwa-status').textContent='📱 Installed!';});
+
+    // Offline/Online indicator
+    const ob=document.getElementById('offline-bar');
+    function netStatus(){ob.classList.toggle('show',!navigator.onLine);}
+    window.addEventListener('online',netStatus); window.addEventListener('offline',netStatus); netStatus();
+    </script>
+
+</body>
+</html>
